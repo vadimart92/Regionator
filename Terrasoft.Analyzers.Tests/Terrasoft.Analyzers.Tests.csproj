@@ -143,6 +143,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="MembersSource.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="TypeResultTestClass.cs" />

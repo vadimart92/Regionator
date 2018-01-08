@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,10 +12,10 @@ namespace Terrasoft.Analyzers.Tests
 	public class Tests
 	{
 
-		private readonly SyntaxTree _sourceSyntaxTree = CSharpSyntaxTree.ParseText(SourceContent);
+		private readonly SyntaxTree _sourceTypesSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.TypeSourceTestClass.cs"));
+		private readonly SyntaxTree _sourceMembersSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.MembersSource.cs"));
 
 		private static readonly string ResultContent = ReadResource("Terrasoft.Analyzers.Tests.TypeResultTestClass.cs");
-		private static readonly string SourceContent = ReadResource("Terrasoft.Analyzers.Tests.TypeSourceTestClass.cs");
 
 		private static string ReadResource(string name) {
 			using (var reader = new StreamReader(typeof(Tests).Assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException())) {
@@ -26,7 +27,7 @@ namespace Terrasoft.Analyzers.Tests
 		public void GetClassesNotInregion() {
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
-			var invalidTypes = analizer.ValidateRegions(_sourceSyntaxTree.GetRoot());
+			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
 			invalidTypes.Should().HaveCount(4);
 		}
 
@@ -34,39 +35,23 @@ namespace Terrasoft.Analyzers.Tests
 		public void FixClassesNotInregion() {
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
-			var invalidTypes = analizer.ValidateRegions(_sourceSyntaxTree.GetRoot());
+			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
 			var fixer = new RegionFixer(nameProvider);
-			var fixedRoot = fixer.FixRegions(_sourceSyntaxTree.GetRoot(), invalidTypes);
+			var fixedRoot = fixer.FixRegions(_sourceTypesSyntaxTree.GetRoot(), invalidTypes);
 			fixedRoot = fixer.FixSpaces(fixedRoot);
 			var result = fixedRoot.ToFullString();
 			result.Should().BeEquivalentTo(ResultContent);
 			analizer.ValidateRegions(fixedRoot).Should().BeEmpty();
 		}
+
 		[Test]
-		public void FixLines() {
+		public void GetMembersNotInregion() {
 			var nameProvider = new NameProvider();
-			var fixer = new RegionFixer(nameProvider);
-			var fixedRoot = fixer.FixSpaces(CSharpSyntaxTree.ParseText(@"
-
-	#region Enum: SourceTestInterfaceWithoutRegion
-
-
-	enum SourceTestInterfaceWithoutRegion
-	{
-	}
-
-
-	#endregion").GetRoot());
-			var result = fixedRoot.ToFullString();
-			result.Should().BeEquivalentTo(@"
-
-	#region Enum: SourceTestInterfaceWithoutRegion
-
-	enum SourceTestInterfaceWithoutRegion
-	{
-	}
-
-	#endregion");
+			var analizer = new RegionAnalyzer(nameProvider);
+			var result = analizer.ValidateRegions(_sourceMembersSyntaxTree.GetRoot());
+			result.Should().HaveCount(1);
+			var members = result.First().Members;
+			
 		}
 
 	}
