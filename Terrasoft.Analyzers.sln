@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terrasoft.Analyzers.Tests", "Regionator\Terrasoft.Analyzers.Tests.csproj", "{ED5B67FD-6B9E-408F-AC1E-37AD18F3AE3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terrasoft.Analyzers.Tests", "Terrasoft.Analyzers.Tests\Terrasoft.Analyzers.Tests.csproj", "{ED5B67FD-6B9E-408F-AC1E-37AD18F3AE3A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FixRegions", "FixRegions\FixRegions.csproj", "{5910F184-71B0-4A3C-A269-94AB6C7A49A0}"
 EndProject
