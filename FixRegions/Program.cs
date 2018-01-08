@@ -1,10 +1,10 @@
-﻿namespace FixRegions
+﻿using Terrasoft.Analyzers;
+
+namespace FixRegions
 {
 	using System;
-	using System.Diagnostics;
 	using System.IO;
 	using Microsoft.CodeAnalysis.CSharp;
-	using Regionator;
 
 	class Program
 	{
@@ -13,10 +13,10 @@
 			Console.WriteLine($"File: {file}");
 			var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
 			var nameProvider = new NameProvider();
-			var analizer = new TerrasoftCodeStyleAnalyzer(nameProvider);
-			var invalidTypes = analizer.ValidateTypeRegions(syntaxTree.GetRoot());
-			var fixer = new TerrasoftCodeStyleFixer(nameProvider);
-			var fixedRoot = fixer.FixRegions(syntaxTree.GetRoot(), invalidTypes);
+			var analizer = new RegionAnalyzer(nameProvider);
+			var results = analizer.ValidateRegions(syntaxTree.GetRoot());
+			var fixer = new RegionFixer(nameProvider);
+			var fixedRoot = fixer.FixRegions(syntaxTree.GetRoot(), results);
 			var result = fixedRoot.ToFullString();
 			File.WriteAllText(file, result);
 		}
