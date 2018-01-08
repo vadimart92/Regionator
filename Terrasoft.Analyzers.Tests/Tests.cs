@@ -28,7 +28,7 @@ namespace Terrasoft.Analyzers.Tests
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
 			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
-			invalidTypes.Should().HaveCount(4);
+			invalidTypes.Should().HaveCount(5);
 		}
 
 		[Test]
@@ -41,7 +41,7 @@ namespace Terrasoft.Analyzers.Tests
 			fixedRoot = fixer.FixSpaces(fixedRoot);
 			var result = fixedRoot.ToFullString();
 			result.Should().BeEquivalentTo(ResultContent);
-			analizer.ValidateRegions(fixedRoot).Should().BeEmpty();
+			analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot()).Should().BeEmpty();
 		}
 
 		[Test]
@@ -51,7 +51,8 @@ namespace Terrasoft.Analyzers.Tests
 			var result = analizer.ValidateRegions(_sourceMembersSyntaxTree.GetRoot());
 			result.Should().HaveCount(1);
 			var members = result.First().Members;
-			
+			members.Should().HaveCount(1);
+
 		}
 
 	}

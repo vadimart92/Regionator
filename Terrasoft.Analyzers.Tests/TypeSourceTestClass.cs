@@ -38,12 +38,20 @@ namespace Regionator
 	{
 	}
 
-	struct SourceTestInterfaceWithoutRegion
+	struct SourceTestStructWithoutRegion
 	{
 	}
 
-	enum SourceTestInterfaceWithoutRegion
+	enum SourceTestEnumWithoutRegion
 	{
 	}
+
+	#region Class: NotInRegionButRegionExists
+	#endregion
+
+	class NotInRegionButRegionExists
+	{
+	}
+
 }
 

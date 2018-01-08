@@ -5,6 +5,7 @@ namespace Terrasoft.Analyzers {
 	{
 
 		string GetRegionName(BaseTypeDeclarationSyntax declarationSyntax);
+		string GetRegionName(MemberDeclarationSyntax declarationSyntax);
 
 	}
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace Terrasoft.Analyzers {
@@ -45,22 +46,40 @@ namespace Terrasoft.Analyzers {
 			return result;
 		}
 
-		private bool HasRegion(BaseTypeDeclarationSyntax classDeclarationSyntax, List<RegionDirectiveTriviaSyntax> regions) {
-			var expectedRegionName = _nameProvider.GetRegionName(classDeclarationSyntax);
-			RegionDirectiveTriviaSyntax foundRegion = null;
-			var result = regions.Any(r => {
-				var nameTrivia = r.DescendantTrivia(descendIntoTrivia: true)
-					.First(t => CSharpExtensions.IsKind((SyntaxTrivia) t, SyntaxKind.PreprocessingMessageTrivia));
-				bool found = expectedRegionName.Equals(nameTrivia.ToString(), StringComparison.OrdinalIgnoreCase);
-				if (found) {
-					foundRegion = r;
-				}
-				return found;
-			});
-			if (result) {
-				regions.Remove(foundRegion);
+		private bool HasRegion(BaseTypeDeclarationSyntax typeDeclaration, List<RegionDirectiveTriviaSyntax> regions) {
+			var expectedRegionName = _nameProvider.GetRegionName(typeDeclaration);
+			var result = regions.Where(region => IsValidRegionForType(typeDeclaration, region, expectedRegionName)).ToList();
+			if (result.Count==1) {
+				regions.Remove(result[0]);
+				return true;
 			}
-			return result;
+			return false;
+		}
+
+		private static bool IsValidRegionForType(BaseTypeDeclarationSyntax typeDeclaration, RegionDirectiveTriviaSyntax region,
+				string expectedRegionName) {
+			var openBraceToken = typeDeclaration.OpenBraceToken;
+			var closeBraceToken = typeDeclaration.CloseBraceToken;
+			return IsNodeInValidRegion(region, expectedRegionName, openBraceToken.SpanStart, closeBraceToken.SpanStart);
+		}
+
+		private static bool IsValidRegionForMember(MemberDeclarationSyntax memberDeclaration, RegionDirectiveTriviaSyntax region,
+				string expectedRegionName) {
+			var span = memberDeclaration.Span;
+			return IsNodeInValidRegion(region, expectedRegionName, span.Start, span.End);
+		}
+
+		private static bool IsNodeInValidRegion(RegionDirectiveTriviaSyntax region, string expectedRegionName,
+			int start, int end) {
+			var regionContainsType = region.SpanStart < start &&
+				 region.GetRelatedDirectives().Last().SpanStart > end;
+			if (regionContainsType) {
+				var nameTrivia = region.DescendantTrivia(descendIntoTrivia: true)
+					.First(t => t.IsKind(SyntaxKind.PreprocessingMessageTrivia));
+				return expectedRegionName.Equals(nameTrivia.ToString(), StringComparison.OrdinalIgnoreCase);
+			}
+
+			return false;
 		}
 
 		private List<TNode> GetNodes<TNode>(SyntaxNode root) {
@@ -71,7 +90,24 @@ namespace Terrasoft.Analyzers {
 		}
 
 		private IList<MemberDeclarationSyntax> GetMembersNotInRegion(TypeDeclarationSyntax typeDeclarationSyntax) {
-			return null;
+			var members = typeDeclarationSyntax.ChildNodes().OfType<MemberDeclarationSyntax>().ToList();
+			if (members.Count == 0) {
+				return null;
+			};
+			var regions = GetNodes<RegionDirectiveTriviaSyntax>(typeDeclarationSyntax);
+			if (regions.Count == 0) {
+				return members.ToList();
+			}
+			var result = new List<MemberDeclarationSyntax>();
+			foreach (var member in members) {
+				var expectedRegionName = _nameProvider.GetRegionName(member);
+				var regionsForMember = regions.Where(region => IsValidRegionForMember(member, region, expectedRegionName)).ToList();
+				if (regionsForMember.Count == 1) {
+					continue;
+				}
+				result.Add(member);
+			}
+			return result;
 		}
 
 	}

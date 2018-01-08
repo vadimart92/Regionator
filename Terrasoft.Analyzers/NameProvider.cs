@@ -1,4 +1,8 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using System;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Ultimate.Utilities;
 
 namespace Terrasoft.Analyzers
@@ -17,5 +21,20 @@ namespace Terrasoft.Analyzers
 			return $"{type}: {typeName}";
 		}
 
+		public string GetRegionName(MemberDeclarationSyntax declarationSyntax) {
+			switch (declarationSyntax.Kind()) {
+				case SyntaxKind.ConstructorDeclaration:
+					return GetMethodWithAccess("Constructors", (BaseMethodDeclarationSyntax)declarationSyntax);
+				default:
+					throw new NotImplementedException();
+			}
+		}
+
+		private string GetMethodWithAccess(string memberName, BaseMethodDeclarationSyntax declarationSyntax) {
+			var modifier = declarationSyntax.Modifiers.Where(m => m.IsKindOf(SyntaxKind.PublicKeyword,
+				SyntaxKind.PrivateKeyword, SyntaxKind.ProtectedKeyword, SyntaxKind.InternalKeyword)).ToList();
+			var modifierDescriptor = modifier.Count == 2 ? "ProtectedInternal" : StringUtils.Capitalize(modifier.First().ToString());
+			return $"{memberName}: {modifierDescriptor}";
+		}
 	}
 }

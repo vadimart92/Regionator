@@ -11,11 +11,18 @@ namespace Terrasoft.Analyzers.Tests
 
 	public class MembersSource
 	{
-
 		public MembersSource() {
 			
 		}
 
+		#region Constructors: ProtectedInternal
+
+		protected internal MembersSource()
+		{
+
+		}
+
+		#endregion
 	}
 
 	#endregion

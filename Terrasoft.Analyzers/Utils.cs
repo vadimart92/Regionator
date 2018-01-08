@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -20,6 +21,10 @@ namespace Terrasoft.Analyzers {
 
 		public static SyntaxTriviaList With(this SyntaxTriviaList source, SyntaxTrivia another, bool reverse = false) {
 			return reverse ? new SyntaxTriviaList(another).AddRange(source) : source.Add(another);
+		}
+
+		public static bool IsKindOf(this SyntaxToken token, params SyntaxKind[] kinds) {
+			return kinds.Any(kind => token.IsKind(kind));
 		}
 
 	}
