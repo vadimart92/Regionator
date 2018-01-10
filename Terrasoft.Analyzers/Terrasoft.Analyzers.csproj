@@ -138,6 +138,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="INameProvider.cs" />
+    <Compile Include="ConstructionNames.cs" />
+    <Compile Include="ModifierNames.cs" />
     <Compile Include="NameProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegionAnalyzer.cs" />

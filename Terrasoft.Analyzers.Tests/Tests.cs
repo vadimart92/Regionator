@@ -51,8 +51,7 @@ namespace Terrasoft.Analyzers.Tests
 			var result = analizer.ValidateRegions(_sourceMembersSyntaxTree.GetRoot());
 			result.Should().HaveCount(1);
 			var members = result.First().Members;
-			members.Should().HaveCount(1);
-
+			members.Should().HaveCount(7);
 		}
 
 	}
