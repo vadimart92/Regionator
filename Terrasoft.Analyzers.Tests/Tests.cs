@@ -15,6 +15,9 @@ namespace Terrasoft.Analyzers.Tests
 		private readonly SyntaxTree _sourceTypesSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.TypeSourceTestClass.cs"));
 		private readonly SyntaxTree _sourceMembersSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.MembersSource.cs"));
 
+		private readonly SyntaxTree _sourceMethodsToRegion = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.MethodToRegionSource.cs"));
+		private readonly string ResultMethodsToRegion = ReadResource("Terrasoft.Analyzers.Tests.MethodToRegionResult.cs");
+
 		private static readonly string ResultContent = ReadResource("Terrasoft.Analyzers.Tests.TypeResultTestClass.cs");
 
 		private static string ReadResource(string name) {
@@ -52,6 +55,19 @@ namespace Terrasoft.Analyzers.Tests
 			result.Should().HaveCount(1);
 			var members = result.First().Members;
 			members.Should().HaveCount(7);
+		}
+
+		[Test]
+		public void FixMethods() {
+			var nameProvider = new NameProvider();
+			var analizer = new RegionAnalyzer(nameProvider);
+			var invalidTypes = analizer.ValidateRegions(_sourceMethodsToRegion.GetRoot());
+			var fixer = new RegionFixer(nameProvider);
+			var fixedRoot = fixer.FixRegions(_sourceMethodsToRegion.GetRoot(), invalidTypes);
+			fixedRoot = fixer.FixSpaces(fixedRoot);
+			var result = fixedRoot.ToFullString();
+			result.Should().BeEquivalentTo(ResultMethodsToRegion);
+			analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot()).Should().BeEmpty();
 		}
 
 	}
