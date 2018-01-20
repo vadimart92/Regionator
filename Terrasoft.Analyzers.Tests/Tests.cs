@@ -12,15 +12,16 @@ namespace Terrasoft.Analyzers.Tests
 	public class Tests
 	{
 
-		private readonly SyntaxTree _sourceTypesSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.TypeSourceTestClass.cs"));
-		private readonly SyntaxTree _sourceMembersSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.MembersSource.cs"));
-
-		private readonly SyntaxTree _sourceMethodsToRegion = CSharpSyntaxTree.ParseText(ReadResource("Terrasoft.Analyzers.Tests.MethodToRegionSource.cs"));
-		private readonly string ResultMethodsToRegion = ReadResource("Terrasoft.Analyzers.Tests.MethodToRegionResult.cs");
-
-		private static readonly string ResultContent = ReadResource("Terrasoft.Analyzers.Tests.TypeResultTestClass.cs");
+		private readonly SyntaxTree _sourceTypesSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("TypeSourceTestClass"));
+		private readonly SyntaxTree _sourceMembersSyntaxTree = CSharpSyntaxTree.ParseText(ReadResource("MembersSource"));
+		private readonly SyntaxTree _sourceMethodsToRegion = CSharpSyntaxTree.ParseText(ReadResource("MethodToRegionSource"));
+		private readonly SyntaxTree _sourceFixLines = CSharpSyntaxTree.ParseText(ReadResource("FixLinesSource"));
+		private readonly string _resultMethodsToRegion = ReadResource("MethodToRegionResult");
+		private static readonly string ResultContent = ReadResource("TypeResultTestClass");
+		private static readonly string FixLinesResultContent = ReadResource("FixLinesResult");
 
 		private static string ReadResource(string name) {
+			name = $"Terrasoft.Analyzers.Tests.{name}.cs";
 			using (var reader = new StreamReader(typeof(Tests).Assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException())) {
 				return reader.ReadToEnd();
 			}
@@ -31,7 +32,17 @@ namespace Terrasoft.Analyzers.Tests
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
 			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
-			invalidTypes.Should().HaveCount(5);
+			invalidTypes.Should().HaveCount(6);
+		}
+
+		[Test]
+		public void FixSpaces() {
+			var nameProvider = new NameProvider();
+			var fixer = new RegionFixer(nameProvider);
+			var sourceRoot = _sourceFixLines.GetRoot();
+			var fixedRoot = fixer.FixSpaces(sourceRoot);
+			var result = fixedRoot.ToFullString();
+			result.Should().BeEquivalentTo(FixLinesResultContent);
 		}
 
 		[Test]
@@ -66,7 +77,7 @@ namespace Terrasoft.Analyzers.Tests
 			var fixedRoot = fixer.FixRegions(_sourceMethodsToRegion.GetRoot(), invalidTypes);
 			fixedRoot = fixer.FixSpaces(fixedRoot);
 			var result = fixedRoot.ToFullString();
-			result.Should().BeEquivalentTo(ResultMethodsToRegion);
+			result.Should().BeEquivalentTo(_resultMethodsToRegion);
 			analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot()).Should().BeEmpty();
 		}
 

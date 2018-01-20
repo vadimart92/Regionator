@@ -16,11 +16,18 @@ namespace Terrasoft.Analyzers {
 		}
 
 		public static SyntaxTriviaList With(this SyntaxTriviaList source, SyntaxTriviaList another, bool reverse = false) {
+			if (!reverse && another.Count == 0) {
+				return source;
+			}
 			return reverse ? another.AddRange(source) : source.AddRange(another);
 		}
 
 		public static SyntaxTriviaList With(this SyntaxTriviaList source, SyntaxTrivia another, bool reverse = false) {
 			return reverse ? new SyntaxTriviaList(another).AddRange(source) : source.Add(another);
+		}
+
+		public static bool IsKindOf(this SyntaxTrivia token, params SyntaxKind[] kinds) {
+			return kinds.Any(kind => token.IsKind(kind));
 		}
 
 		public static bool IsKindOf(this SyntaxToken token, params SyntaxKind[] kinds) {

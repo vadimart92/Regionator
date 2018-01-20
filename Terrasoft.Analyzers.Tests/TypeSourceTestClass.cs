@@ -25,7 +25,6 @@ namespace Regionator
 
 	#endregion
 }
-
 namespace Regionator
 {
 
@@ -34,6 +33,9 @@ namespace Regionator
 	{
 	}
 
+	/// <summary>
+	/// SourceTestInterfaceWithoutRegion doc
+	/// </summary>
 	interface SourceTestInterfaceWithoutRegion
 	{
 	}
@@ -54,4 +56,14 @@ namespace Regionator
 	}
 
 }
+namespace XmlDoc
+{
 
+	/// <summary>
+	/// Class With doc.
+	/// </summary>
+	public class ClasWithDoc
+	{
+	}
+
+}

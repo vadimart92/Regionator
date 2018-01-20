@@ -53,12 +53,23 @@ namespace Terrasoft.Analyzers {
 					var regionName = _nameProvider.GetRegionName(baseNode);
 					var nodeOrToken = baseNode.ChildNodesAndTokens().First();
 					var leadingTrivia = nodeOrToken.GetLeadingTrivia();
-					var spaces = leadingTrivia.Reverse().TakeWhile(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToList();
+					var xmlDoc = leadingTrivia.Where(t => t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)).ToList();
+					var spaces = leadingTrivia.Reverse().TakeWhile(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToSyntaxTriviaList();
+					if (xmlDoc.Count > 0) {
+						leadingTrivia = leadingTrivia.TakeWhile(t => !t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+							.ToSyntaxTriviaList();
+						xmlDoc = spaces.Concat(xmlDoc).ToList();
+					}
 					var doubleEnter = SyntaxFactory.CarriageReturnLineFeed.And(SyntaxFactory.CarriageReturnLineFeed);
 					var regionTrivia = SyntaxFactory.RegionDirectiveTrivia(true)
 						.WithEndOfDirectiveToken(SyntaxFactory.Token(
-							SyntaxFactory.Space.And(SyntaxFactory.PreprocessingMessage(regionName)), SyntaxKind.EndOfDirectiveToken,
-							doubleEnter)).With(leadingTrivia, true).With(SyntaxFactory.CarriageReturnLineFeed, true).With(spaces.ToSyntaxTriviaList());
+							SyntaxFactory.Space.And(SyntaxFactory.PreprocessingMessage(regionName)),
+							SyntaxKind.EndOfDirectiveToken,
+							doubleEnter)
+						).With(leadingTrivia, true)
+						.With(SyntaxFactory.CarriageReturnLineFeed, true)
+						.With(xmlDoc.ToSyntaxTriviaList())
+						.With(spaces);
 					if (nodeOrToken.IsToken) {
 						var firstToken = nodeOrToken.AsToken();
 						replacedNode = baseNode.ReplaceToken(firstToken, firstToken.WithLeadingTrivia(regionTrivia));
@@ -67,7 +78,7 @@ namespace Terrasoft.Analyzers {
 						replacedNode = baseNode.ReplaceNode(firstNode, firstNode.WithLeadingTrivia(regionTrivia));
 					}
 					var endBrace = replacedNode.CloseBraceToken;
-					var endregionTrivia = doubleEnter.With(spaces.ToSyntaxTriviaList())
+					var endregionTrivia = doubleEnter.With(spaces)
 						.With(SyntaxFactory.Trivia(SyntaxFactory.EndRegionDirectiveTrivia(true))).With(doubleEnter);
 					replacedNode = replacedNode.ReplaceToken(endBrace, endBrace.WithTrailingTrivia(endregionTrivia));
 				}
@@ -101,7 +112,6 @@ namespace Terrasoft.Analyzers {
 				}
 				return result;
 			}
-
 		}
 
 		public SyntaxNode FixRegions(SyntaxNode syntaxNode, List<RegionAnalisysResult> invalidTypes) {

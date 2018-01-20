@@ -6,7 +6,21 @@ using System.Threading.Tasks;
 
 namespace Terrasoft.Analyzers.Tests
 {
-	class MethodToRegionResult
+	#region Class: MethodToRegionSource
+
+	public class MethodToRegionSource
 	{
+
+		#region Methods: Private
+
+		private void TestMethodNotInRegion()
+		{
+
+		}
+
+		#endregion
+
 	}
+
+	#endregion
 }
