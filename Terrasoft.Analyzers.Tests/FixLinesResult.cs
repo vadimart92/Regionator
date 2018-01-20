@@ -15,6 +15,7 @@ namespace Terrasoft.Analyzers.Tests1
 		#region Constructor: Public
 
 		public FixLines() {
+
 		}
 
 		#endregion
@@ -76,9 +77,11 @@ namespace Terrasoft.Analyzers.Tests4
 	#region Region
 
 	class MyClass {
+
 		void Method() {
 			var z = 1;
 		}
+
 	}
 
 	#endregion

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Regionator
 {
+
 	#region Class: TestClassInRegion
 
 	class TestClassInRegion
@@ -23,9 +24,11 @@ namespace Regionator
 	}
 
 	#endregion
+
 }
 namespace Regionator
 {
+
 	#region Class: SourceTestClassWithoutRegion
 
 	[TestFixture]
@@ -73,8 +76,10 @@ namespace Regionator
 
 	#endregion
 
-}namespace XmlDoc
+}
+namespace XmlDoc
 {
+
 	#region Class: ClasWithDoc
 
 	/// <summary>

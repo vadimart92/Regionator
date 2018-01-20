@@ -46,6 +46,39 @@ namespace Terrasoft.Analyzers.Tests
 		}
 
 		[Test]
+		public void FixSpaces2() {
+			var nameProvider = new NameProvider();
+			var fixer = new RegionFixer(nameProvider);
+			var sourceRoot = CSharpSyntaxTree.ParseText(@"namespace Terrasoft.Analyzers.Tests1
+{
+
+
+	#region Class: FixLines
+
+	class FixLines
+	{
+
+
+		#region Constructor: Public
+
+		public FixLines() {
+		}
+
+		#endregion
+
+	}
+
+
+	#endregion
+
+}
+").GetRoot();
+			var fixedRoot = fixer.FixSpaces(sourceRoot);
+			var result = fixedRoot.ToFullString();
+			
+		}
+
+		[Test]
 		public void FixClassesNotInregion() {
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);

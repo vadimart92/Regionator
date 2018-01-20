@@ -24,6 +24,7 @@ namespace Regionator
 	}
 
 	#endregion
+
 }
 namespace Regionator
 {
