@@ -68,3 +68,21 @@ namespace XmlDoc
 	}
 
 }
+namespace Nested
+{
+
+	public class RootType
+	{
+
+		public class NestedType
+		{
+
+			class DoubleNestedType
+			{
+			}
+
+		}
+
+	}
+
+}

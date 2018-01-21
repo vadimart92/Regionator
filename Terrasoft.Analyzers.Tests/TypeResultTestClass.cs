@@ -92,3 +92,33 @@ namespace XmlDoc
 	#endregion
 
 }
+namespace Nested
+{
+
+	#region Class: RootType
+
+	public class RootType
+	{
+
+		#region Class: NestedType
+
+		public class NestedType
+		{
+
+			#region Class: DoubleNestedType
+
+			class DoubleNestedType
+			{
+			}
+
+			#endregion
+
+		}
+
+		#endregion
+
+	}
+
+	#endregion
+
+}

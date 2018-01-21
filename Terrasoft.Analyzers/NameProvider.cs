@@ -46,6 +46,9 @@ namespace Terrasoft.Analyzers
 					var modifiers = eventDeclaration.Modifiers;
 					return GetMemberWithAccess(ConstructionNames.Events, modifiers, ModifierNames.Internal);
 				}
+				case BaseTypeDeclarationSyntax type: {
+					return GetRegionName(type);
+				}
 				default:
 					throw new NotImplementedException();
 			}

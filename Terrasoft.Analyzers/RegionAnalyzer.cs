@@ -107,7 +107,7 @@ namespace Terrasoft.Analyzers {
 				}
 				result.Add(member);
 			}
-			return result;
+			return result.Count > 0 ? result : null;
 		}
 
 	}

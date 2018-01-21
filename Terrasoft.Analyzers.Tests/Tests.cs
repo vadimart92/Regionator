@@ -32,7 +32,7 @@ namespace Terrasoft.Analyzers.Tests
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
 			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
-			invalidTypes.Should().HaveCount(6);
+			invalidTypes.Should().HaveCount(8);
 		}
 
 		[Test]
@@ -46,39 +46,6 @@ namespace Terrasoft.Analyzers.Tests
 		}
 
 		[Test]
-		public void FixSpaces2() {
-			var nameProvider = new NameProvider();
-			var fixer = new RegionFixer(nameProvider);
-			var sourceRoot = CSharpSyntaxTree.ParseText(@"namespace Terrasoft.Analyzers.Tests1
-{
-
-
-	#region Class: FixLines
-
-	class FixLines
-	{
-
-
-		#region Constructor: Public
-
-		public FixLines() {
-		}
-
-		#endregion
-
-	}
-
-
-	#endregion
-
-}
-").GetRoot();
-			var fixedRoot = fixer.FixSpaces(sourceRoot);
-			var result = fixedRoot.ToFullString();
-			
-		}
-
-		[Test]
 		public void FixClassesNotInregion() {
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
@@ -88,7 +55,8 @@ namespace Terrasoft.Analyzers.Tests
 			fixedRoot = fixer.FixSpaces(fixedRoot);
 			var result = fixedRoot.ToFullString();
 			result.Should().BeEquivalentTo(ResultContent);
-			analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot()).Should().BeEmpty();
+			var results = analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot());
+			results.Should().BeEmpty();
 		}
 
 		[Test]
@@ -112,6 +80,47 @@ namespace Terrasoft.Analyzers.Tests
 			var result = fixedRoot.ToFullString();
 			result.Should().BeEquivalentTo(_resultMethodsToRegion);
 			analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot()).Should().BeEmpty();
+		}
+
+		[Test]
+		public void FixMethods_WIP() {
+			var nameProvider = new NameProvider();
+			var analizer = new RegionAnalyzer(nameProvider);
+			var syntaxNode = CSharpSyntaxTree.ParseText(@"
+#region Class: SomeType
+
+class SomeType {
+
+	public void Method(){
+	}
+
+}
+
+#endregion
+").GetRoot();
+			var invalidTypes = analizer.ValidateRegions(syntaxNode);
+			var fixer = new RegionFixer(nameProvider);
+			var fixedRoot = fixer.FixRegions(syntaxNode, invalidTypes);
+			fixedRoot = fixer.FixSpaces(fixedRoot);
+			var result = fixedRoot.ToFullString();
+			result.Should().BeEquivalentTo(@"
+#region Class: SomeType
+
+class SomeType {
+	
+	#region Methods: Public
+
+	public void Method(){
+	}
+
+	#endregion
+
+}
+
+#endregion
+");
+			var results = analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot());
+			results.Should().BeEmpty();
 		}
 
 	}

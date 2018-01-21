@@ -15,7 +15,8 @@ namespace Terrasoft.Analyzers {
 		public SyntaxNode FixRegions(SyntaxNode syntaxNode, List<RegionAnalisysResult> invalidTypes) {
 			var typesToFix = invalidTypes.Where(t=>t.TypeRegionError).Select(t=>t.TypeDeclaration).ToList();
 			var rewriter = new TypeRegionRewriter(typesToFix, _nameProvider);
-			return FixSpaces(rewriter.Visit(syntaxNode));
+			var node = rewriter.Visit(syntaxNode);
+			return FixSpaces(node);
 		}
 
 		public SyntaxNode FixSpaces(SyntaxNode syntaxNode) {
