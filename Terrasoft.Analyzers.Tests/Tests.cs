@@ -91,15 +91,18 @@ namespace Terrasoft.Analyzers.Tests
 
 class SomeType {
 
-	public void Method(){
-	}
-
-	private SomeType(){
+	private void Method2(){
 	}
 
 	#region Methods: Private
+
+	private void Method1(){
+	}
+
 	#endregion
 
+	private void Method3(){
+	}
 }
 
 #endregion
@@ -114,21 +117,17 @@ class SomeType {
 
 class SomeType {
 
-	#region Methods: Public
-
-	public void Method(){
-	}
-
-	#endregion
-
-	#region Constructors: Private
-
-	private SomeType(){
-	}
-
-	#endregion
-
 	#region Methods: Private
+
+	private void Method1(){
+	}
+
+	private void Method2(){
+	}
+
+	private void Method3(){
+	}
+
 	#endregion
 
 }

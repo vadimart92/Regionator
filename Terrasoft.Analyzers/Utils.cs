@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Terrasoft.Analyzers {
 	public static class Utils
@@ -40,22 +41,27 @@ namespace Terrasoft.Analyzers {
 			string expectedRegionName) {
 			var openBraceToken = typeDeclaration.OpenBraceToken;
 			var closeBraceToken = typeDeclaration.CloseBraceToken;
-			return IsNodeInValidRegion(region, expectedRegionName, openBraceToken.SpanStart, closeBraceToken.SpanStart);
+			var span = new TextSpan(openBraceToken.SpanStart, closeBraceToken.SpanStart- openBraceToken.SpanStart);
+			return IsNodeInValidRegion(region, expectedRegionName, span);
 		}
 
 		public static bool IsValidRegionForMember(MemberDeclarationSyntax memberDeclaration, RegionDirectiveTriviaSyntax region,
 			string expectedRegionName) {
 			var span = memberDeclaration.Span;
-			return IsNodeInValidRegion(region, expectedRegionName, span.Start, span.End);
+			return IsNodeInValidRegion(region, expectedRegionName, span);
 		}
 
 		private static bool IsNodeInValidRegion(RegionDirectiveTriviaSyntax region, string expectedRegionName,
-			int start, int end) {
-			var regionContainsType = region.SpanStart < start && region.GetRelatedDirectives().Last().SpanStart > end;
+			TextSpan span) {
+			var regionContainsType = RegionContainsSpan(region, span);
 			if (regionContainsType) {
 				return RegionHasName(region, expectedRegionName);
 			}
 			return false;
+		}
+
+		public static bool RegionContainsSpan(RegionDirectiveTriviaSyntax region, TextSpan span) {
+			return region.SpanStart < span.Start && region.GetRelatedDirectives().Last().SpanStart > span.End;
 		}
 
 		internal static bool RegionHasName(RegionDirectiveTriviaSyntax region, string expectedRegionName) {

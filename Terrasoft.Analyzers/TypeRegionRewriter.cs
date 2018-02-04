@@ -97,22 +97,53 @@ namespace Terrasoft.Analyzers
 				IReadOnlyCollection<MemberDeclarationSyntax> members) {
 			var toProcess = new Queue<MemberDeclarationSyntax>(members);
 			var type = sourceType.TrackNodes(members);
-			var regions = type.DescendantNodes(descendIntoTrivia: true).OfType<RegionDirectiveTriviaSyntax>().ToList();
 			while (toProcess.Count > 0) {
 				var member = toProcess.Dequeue();
 				var expectedRegionName = _nameProvider.GetRegionName(member);
-				var regionsForMember = regions.Where(region => Utils.RegionHasName(region, expectedRegionName)).ToList();
+				var regionsForMember = GetRegionsForMember(type, expectedRegionName);
 				var currentMember = type.GetCurrentNode(member);
 				if (!regionsForMember.Any()) {
 					var memberInRegion = WrapMemberInRegion(currentMember, expectedRegionName);
 					type = type.ReplaceNode(currentMember, memberInRegion);
 				} else {
-					throw new NotImplementedException();
+					var region = GetRegionsForMember(type, expectedRegionName).Single();
+					var lastMember = type.ChildNodes().Last(n => Utils.RegionContainsSpan(region, n.Span));
+					type = type.TrackNodes(region, lastMember, currentMember);
+					region = type.GetCurrentNode(region);
+					var endRegion = region.GetRelatedDirectives().Last().ParentTrivia;
+					var regionToken = endRegion.Token;
+					var (regionPart, anotherPart) = SplitBy(regionToken.LeadingTrivia, trivia => trivia.SpanStart > endRegion.Span.End);
+					type = type.ReplaceToken(regionToken, regionToken.WithLeadingTrivia(anotherPart));
+					type = type.RemoveNode(type.GetCurrentNode(currentMember), SyntaxRemoveOptions.AddElasticMarker);
+					lastMember = type.GetCurrentNode(lastMember);
+					var memberToInsert = currentMember.WithTrailingTrivia(currentMember.GetTrailingTrivia().With(regionPart));
+					type = type.InsertNodesAfter(lastMember, new[] {memberToInsert});
 				}
 			}
 			return type;
 		}
 
+		private static (SyntaxTriviaList, SyntaxTriviaList) SplitBy(SyntaxTriviaList list,
+				Predicate<SyntaxTrivia> predicate) {
+			var part1 = new List<SyntaxTrivia>();
+			var part2 = new List<SyntaxTrivia>();
+			bool useFirstList = true;
+			foreach (var item in list) {
+				useFirstList = useFirstList && !predicate(item);
+				if (useFirstList) {
+					part1.Add(item);
+				} else {
+					part2.Add(item);
+				}
+			}
+			return (part1.ToSyntaxTriviaList(), part2.ToSyntaxTriviaList());
+		}
+
+		private static List<RegionDirectiveTriviaSyntax> GetRegionsForMember(BaseTypeDeclarationSyntax type,
+				string expectedRegionName) {
+			return type.DescendantNodes(descendIntoTrivia: true).OfType<RegionDirectiveTriviaSyntax>()
+				.Where(region => Utils.RegionHasName(region, expectedRegionName)).ToList();
+		}
 
 		private RegionAnalisysResult NeedFix(BaseTypeDeclarationSyntax baseNode) {
 			foreach (var analisysResult in _typesToFix) {

@@ -27,6 +27,20 @@ namespace Terrasoft.Analyzers.Tests
 
 		#endregion
 
+		#region Methods: Public
+
+		public void TestMethodInRegion()
+		{
+
+		}
+
+		public void TestMethodInRegion2()
+		{
+
+		}
+
+		#endregion
+
 	}
 
 	#endregion
