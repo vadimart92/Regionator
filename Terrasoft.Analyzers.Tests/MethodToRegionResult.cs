@@ -13,8 +13,7 @@ namespace Terrasoft.Analyzers.Tests
 
 		#region Methods: Private
 
-		private void TestMethodNotInRegion()
-		{
+		private void TestMethodNotInRegion() {
 
 		}
 

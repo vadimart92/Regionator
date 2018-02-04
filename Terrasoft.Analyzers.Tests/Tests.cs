@@ -32,7 +32,7 @@ namespace Terrasoft.Analyzers.Tests
 			var nameProvider = new NameProvider();
 			var analizer = new RegionAnalyzer(nameProvider);
 			var invalidTypes = analizer.ValidateRegions(_sourceTypesSyntaxTree.GetRoot());
-			invalidTypes.Should().HaveCount(8);
+			invalidTypes.Should().HaveCount(9);
 		}
 
 		[Test]
@@ -94,6 +94,12 @@ class SomeType {
 	public void Method(){
 	}
 
+	private SomeType(){
+	}
+
+	#region Methods: Private
+	#endregion
+
 }
 
 #endregion
@@ -103,11 +109,11 @@ class SomeType {
 			var fixedRoot = fixer.FixRegions(syntaxNode, invalidTypes);
 			fixedRoot = fixer.FixSpaces(fixedRoot);
 			var result = fixedRoot.ToFullString();
-			result.Should().BeEquivalentTo(@"
+			var expected = @"
 #region Class: SomeType
 
 class SomeType {
-	
+
 	#region Methods: Public
 
 	public void Method(){
@@ -115,10 +121,21 @@ class SomeType {
 
 	#endregion
 
+	#region Constructors: Private
+
+	private SomeType(){
+	}
+
+	#endregion
+
+	#region Methods: Private
+	#endregion
+
 }
 
 #endregion
-");
+";
+			result.Should().BeEquivalentTo(expected);
 			var results = analizer.ValidateRegions(CSharpSyntaxTree.ParseText(result).GetRoot());
 			results.Should().BeEmpty();
 		}

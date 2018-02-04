@@ -4,15 +4,19 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using CSharpExtensions = Microsoft.CodeAnalysis.CSharpExtensions;
 
 namespace Terrasoft.Analyzers {
 
 	public class RegionAnalisysResult {
+		private IReadOnlyCollection<MemberDeclarationSyntax> _members;
 		public BaseTypeDeclarationSyntax TypeDeclaration { get; set; }
-		public IList<MemberDeclarationSyntax> Members { get; set; }
-		public bool TypeRegionError { get; set; }
+
+		public IReadOnlyCollection<MemberDeclarationSyntax> Members {
+			get => _members ?? (_members = new List<MemberDeclarationSyntax>());
+			set => _members = value;
+		}
+
+		public bool TypeHasRegionError { get; set; }
 	}
 	
 	public class RegionAnalyzer
@@ -30,7 +34,7 @@ namespace Terrasoft.Analyzers {
 			var result = new List<RegionAnalisysResult>();
 			foreach (var baseTypeDeclaration in classes) {
 				var inRegion = HasRegion(baseTypeDeclaration, regions);
-				IList<MemberDeclarationSyntax> membersErrors = null;
+				List<MemberDeclarationSyntax> membersErrors = null;
 				if (baseTypeDeclaration is TypeDeclarationSyntax typeDeclaration) {
 					membersErrors = GetMembersNotInRegion(typeDeclaration);
 				}
@@ -39,7 +43,7 @@ namespace Terrasoft.Analyzers {
 				}
 				result.Add(new RegionAnalisysResult {
 					TypeDeclaration = baseTypeDeclaration,
-					TypeRegionError = !inRegion,
+					TypeHasRegionError = !inRegion,
 					Members = membersErrors
 				});
 			}
@@ -48,37 +52,11 @@ namespace Terrasoft.Analyzers {
 
 		private bool HasRegion(BaseTypeDeclarationSyntax typeDeclaration, List<RegionDirectiveTriviaSyntax> regions) {
 			var expectedRegionName = _nameProvider.GetRegionName(typeDeclaration);
-			var result = regions.Where(region => IsValidRegionForType(typeDeclaration, region, expectedRegionName)).ToList();
+			var result = regions.Where(region => Utils.IsValidRegionForType(typeDeclaration, region, expectedRegionName)).ToList();
 			if (result.Count==1) {
 				regions.Remove(result[0]);
 				return true;
 			}
-			return false;
-		}
-
-		private static bool IsValidRegionForType(BaseTypeDeclarationSyntax typeDeclaration, RegionDirectiveTriviaSyntax region,
-				string expectedRegionName) {
-			var openBraceToken = typeDeclaration.OpenBraceToken;
-			var closeBraceToken = typeDeclaration.CloseBraceToken;
-			return IsNodeInValidRegion(region, expectedRegionName, openBraceToken.SpanStart, closeBraceToken.SpanStart);
-		}
-
-		private static bool IsValidRegionForMember(MemberDeclarationSyntax memberDeclaration, RegionDirectiveTriviaSyntax region,
-				string expectedRegionName) {
-			var span = memberDeclaration.Span;
-			return IsNodeInValidRegion(region, expectedRegionName, span.Start, span.End);
-		}
-
-		private static bool IsNodeInValidRegion(RegionDirectiveTriviaSyntax region, string expectedRegionName,
-			int start, int end) {
-			var regionContainsType = region.SpanStart < start &&
-				 region.GetRelatedDirectives().Last().SpanStart > end;
-			if (regionContainsType) {
-				var nameTrivia = region.DescendantTrivia(descendIntoTrivia: true)
-					.First(t => t.IsKind(SyntaxKind.PreprocessingMessageTrivia));
-				return expectedRegionName.Equals(nameTrivia.ToString(), StringComparison.OrdinalIgnoreCase);
-			}
-
 			return false;
 		}
 
@@ -89,7 +67,7 @@ namespace Terrasoft.Analyzers {
 			return tokens.ToList();
 		}
 
-		private IList<MemberDeclarationSyntax> GetMembersNotInRegion(TypeDeclarationSyntax typeDeclarationSyntax) {
+		private List<MemberDeclarationSyntax> GetMembersNotInRegion(TypeDeclarationSyntax typeDeclarationSyntax) {
 			var members = typeDeclarationSyntax.ChildNodes().OfType<MemberDeclarationSyntax>().ToList();
 			if (members.Count == 0) {
 				return null;
@@ -101,8 +79,8 @@ namespace Terrasoft.Analyzers {
 			var result = new List<MemberDeclarationSyntax>();
 			foreach (var member in members) {
 				var expectedRegionName = _nameProvider.GetRegionName(member);
-				var regionsForMember = regions.Where(region => IsValidRegionForMember(member, region, expectedRegionName)).ToList();
-				if (regionsForMember.Count == 1) {
+				var regionsForMember = regions.Where(region => Utils.IsValidRegionForMember(member, region, expectedRegionName)).ToList();
+				if (regionsForMember.Count == 1 || member is BaseTypeDeclarationSyntax) {
 					continue;
 				}
 				result.Add(member);
