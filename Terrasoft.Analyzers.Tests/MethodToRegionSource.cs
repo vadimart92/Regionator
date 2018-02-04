@@ -10,6 +10,10 @@ namespace Terrasoft.Analyzers.Tests
 
 	public class MethodToRegionSource
 	{
+		private MethodToRegionSource()
+		{
+		}
+
 		private void TestMethodNotInRegion() {
 
 		}

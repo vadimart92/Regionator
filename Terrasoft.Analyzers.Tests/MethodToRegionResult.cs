@@ -11,6 +11,14 @@ namespace Terrasoft.Analyzers.Tests
 	public class MethodToRegionSource
 	{
 
+		#region Constructors: Private
+
+		private MethodToRegionSource()
+		{
+		}
+
+		#endregion
+
 		#region Methods: Private
 
 		private void TestMethodNotInRegion() {
