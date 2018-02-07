@@ -61,7 +61,12 @@ namespace Terrasoft.Analyzers {
 		}
 
 		public static bool RegionContainsSpan(RegionDirectiveTriviaSyntax region, TextSpan span) {
-			return region.SpanStart < span.Start && region.GetRelatedDirectives().Last().SpanStart > span.End;
+			return RegionContainsSpan(region, (EndRegionDirectiveTriviaSyntax)region.GetRelatedDirectives().Last(), span);
+		}
+
+		public static bool RegionContainsSpan(RegionDirectiveTriviaSyntax start, EndRegionDirectiveTriviaSyntax end,
+				TextSpan span) {
+			return start.SpanStart < span.Start && end.SpanStart > span.End;
 		}
 
 		internal static bool RegionHasName(RegionDirectiveTriviaSyntax region, string expectedRegionName) {

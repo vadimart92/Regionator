@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -106,21 +107,70 @@ namespace Terrasoft.Analyzers
 					var memberInRegion = WrapMemberInRegion(currentMember, expectedRegionName);
 					type = type.ReplaceNode(currentMember, memberInRegion);
 				} else {
-					var region = GetRegionsForMember(type, expectedRegionName).Single();
-					var lastMember = type.ChildNodes().Last(n => Utils.RegionContainsSpan(region, n.Span));
-					type = type.TrackNodes(region, lastMember, currentMember);
-					region = type.GetCurrentNode(region);
-					var endRegion = region.GetRelatedDirectives().Last().ParentTrivia;
-					var regionToken = endRegion.Token;
-					var (regionPart, anotherPart) = SplitBy(regionToken.LeadingTrivia, trivia => trivia.SpanStart > endRegion.Span.End);
-					type = type.ReplaceToken(regionToken, regionToken.WithLeadingTrivia(anotherPart));
-					type = type.RemoveNode(type.GetCurrentNode(currentMember), SyntaxRemoveOptions.AddElasticMarker);
+					var region = FindRegionByName(type, expectedRegionName);
+					var lastMember = type.ChildNodes().Last(n => Utils.RegionContainsSpan(region.Start, region.End, n.Span));
+					type = type.TrackNodes(region.End, lastMember);
+					var endRegion = type.GetCurrentNode(region.End);
+					var token = endRegion.ParentTrivia.Token;
+					var regionInLeadingTrivia = token.HasLeadingTrivia &&
+						token.LeadingTrivia.First().SpanStart < endRegion.SpanStart &&
+						token.LeadingTrivia.Last().Span.End > endRegion.Span.End;
+					if (regionInLeadingTrivia) {
+						type = type.ReplaceToken(token, token.WithLeadingTrivia(SyntaxTriviaList.Empty));
+					}
+					endRegion = type.GetCurrentNode(region.End);
+					if (endRegion != null) {
+						type = type.ReplaceTrivia(endRegion.ParentTrivia, SyntaxFactory.ElasticMarker);
+					}
+					var currentNode = type.GetCurrentNode(member);
+					type = type.RemoveNode(currentNode, SyntaxRemoveOptions.AddElasticMarker);
 					lastMember = type.GetCurrentNode(lastMember);
-					var memberToInsert = currentMember.WithTrailingTrivia(currentMember.GetTrailingTrivia().With(regionPart));
+					var syntaxTriviaList = new SyntaxTriviaList(endRegion?.ParentTrivia ?? SyntaxFactory.ElasticMarker);
+					if (!regionInLeadingTrivia) {
+						syntaxTriviaList = syntaxTriviaList.With(SyntaxFactory.CarriageReturnLineFeed.And(SyntaxFactory.Whitespace("\t")), true);
+					}
+					var trailingTrivias = currentNode.GetTrailingTrivia().With(token.LeadingTrivia.With(syntaxTriviaList));
+					var memberToInsert = currentNode.WithTrailingTrivia(trailingTrivias);
 					type = type.InsertNodesAfter(lastMember, new[] {memberToInsert});
 				}
 			}
 			return type;
+		}
+
+		[DebuggerDisplay("Start={Start}, End={End}")]
+		struct Region
+		{
+			public RegionDirectiveTriviaSyntax Start { get; set; }
+			public EndRegionDirectiveTriviaSyntax End { get; set; }
+
+			public bool IsEmpty() {
+				return End == null && Start == null;
+			}
+
+		}
+
+		private static Region FindRegionByName(BaseTypeDeclarationSyntax type, string expectedRegionName) {
+			var result = new Region();
+			var nodes = type.DescendantNodes(descendIntoTrivia: true).OrderBy(r => r.SpanStart).ToList();
+			int depth = 0;
+			foreach (var node in nodes) {
+				if (node is RegionDirectiveTriviaSyntax regionTrivia) {
+					if (result.Start == null) {
+						if (Utils.RegionHasName(regionTrivia, expectedRegionName)) {
+							result.Start = regionTrivia;
+						}
+					} else {
+						depth++;
+					}
+				} else if (node is EndRegionDirectiveTriviaSyntax endRegionTrivia) {
+					if (depth == 0) {
+						result.End = endRegionTrivia;
+						break;
+					}
+					depth--;
+				}
+			}
+			return result;
 		}
 
 		private static (SyntaxTriviaList, SyntaxTriviaList) SplitBy(SyntaxTriviaList list,

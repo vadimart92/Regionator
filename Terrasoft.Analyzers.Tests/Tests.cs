@@ -110,7 +110,7 @@ class SomeType {
 			var invalidTypes = analizer.ValidateRegions(syntaxNode);
 			var fixer = new RegionFixer(nameProvider);
 			var fixedRoot = fixer.FixRegions(syntaxNode, invalidTypes);
-			fixedRoot = fixer.FixSpaces(fixedRoot);
+			fixedRoot = fixer.FixSpaces(CSharpSyntaxTree.ParseText(fixedRoot.ToFullString()).GetRoot());
 			var result = fixedRoot.ToFullString();
 			var expected = @"
 #region Class: SomeType
